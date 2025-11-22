@@ -1,0 +1,106 @@
+CREATE TABLE company (
+    company_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    location VARCHAR(100) NOT NULL,
+    established_year YEAR,
+    CHECK (established_year >= 1900)
+);
+CREATE TABLE department (
+    dept_id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    dept_name VARCHAR(100) NOT NULL,
+    manager VARCHAR(100),
+    UNIQUE(company_id, dept_name),
+    FOREIGN KEY (company_id) REFERENCES company(company_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+CREATE TABLE team (
+    team_id INT AUTO_INCREMENT PRIMARY KEY,
+    dept_id INT NOT NULL,
+    team_name VARCHAR(100) NOT NULL,
+    Tlead VARCHAR(100),
+    UNIQUE(dept_id, team_name),
+    FOREIGN KEY (dept_id) REFERENCES department(dept_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- ========== LEVEL 4: EMPLOYEE ==========
+CREATE TABLE employee (
+    emp_id INT AUTO_INCREMENT PRIMARY KEY,
+    team_id INT NOT NULL,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(120) NOT NULL UNIQUE,
+    role VARCHAR(50) NOT NULL,
+    salary DECIMAL(10,2) NOT NULL,
+    join_date DATE NOT NULL,
+    
+    CHECK (salary > 0),
+    CHECK (role IN ('Manager', 'Developer', 'Analyst', 'HR', 'Intern')),
+    
+    FOREIGN KEY (team_id) REFERENCES team(team_id)
+        ON DELETE SET NULL ON UPDATE CASCADE
+);
+
+
+INSERT INTO company (name, location, established_year)
+VALUES 
+('TechNova Pvt Ltd', 'Mumbai', 2005);
+
+
+INSERT INTO department (company_id, dept_name, manager)
+VALUES
+(1, 'IT Department', 'Amit Shah'),
+(1, 'HR Department', 'Neha Kapoor');
+
+
+INSERT INTO team (dept_id, team_name, Tlead)
+VALUES
+(1, 'Backend Team', 'Rahul Verma'),
+(1, 'Frontend Team', 'Sonal Patil'),
+(2, 'Recruitment Team', 'Kiran Joshi');
+
+
+INSERT INTO employee (team_id, full_name, email, role, salary, join_date)
+VALUES
+(1, 'Rohan Desai', 'rohan@example.com', 'Developer', 60000, '2022-01-10'),
+(1, 'Priya Mehta', 'priya@example.com', 'Analyst', 55000, '2021-06-04'),
+(2, 'Sanjay Rathod', 'sanjay@example.com', 'Developer', 58000, '2023-03-22'),
+(3, 'Nikita Sharma', 'nikita@example.com', 'HR', 45000, '2020-09-17');
+
+
+CREATE ROLE company_admin;
+CREATE ROLE dept_manager;
+CREATE ROLE team_lead;
+CREATE ROLE hr_viewer;
+
+
+GRANT ALL PRIVILEGES ON company_db.* TO company_admin;
+
+
+GRANT SELECT, INSERT, UPDATE ON department TO dept_manager;
+GRANT SELECT, INSERT, UPDATE ON team TO dept_manager;
+
+GRANT SELECT, INSERT, UPDATE ON employee TO team_lead;
+
+GRANT SELECT ON employee TO hr_viewer;
+
+GRANT company_admin TO 'admin_user'@'localhost';
+GRANT dept_manager TO 'manager_user'@'localhost';
+GRANT team_lead TO 'lead_user'@'localhost';
+GRANT hr_viewer TO 'hr_user'@'localhost';
+
+SELECT 
+    c.name AS company,
+    d.dept_name AS department,
+    t.team_name AS team,
+    e.full_name AS employee,
+    e.role
+FROM employee e
+JOIN team t ON e.team_id = t.team_id
+JOIN department d ON t.dept_id = d.dept_id
+JOIN company c ON d.company_id = c.company_id
+ORDER BY company, department, team;
+
+
